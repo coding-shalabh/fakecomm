@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Dummy users who can send/receive messages
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String   @unique
+  company   String?
+  city      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  // Messages sent/received by this user
+  messages Message[]
+  calls    Call[]
+}
+
+// All messages (WhatsApp, SMS, Email)
+model Message {
+  id            String      @id @default(cuid())
+
+  // User who sent/received
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+
+  // Channel type
+  channel       Channel     @default(WHATSAPP)
+
+  // Direction
+  direction     Direction   @default(INBOUND)
+
+  // Content
+  contentType   ContentType @default(TEXT)
+  text          String?
+  mediaUrl      String?
+  caption       String?
+
+  // For email
+  subject       String?
+  htmlBody      String?
+
+  // Status
+  status        Status      @default(PENDING)
+
+  // External IDs
+  externalId    String?     // ID from Nexora or other systems
+  webhookSent   Boolean     @default(false)
+  webhookResponse String?
+
+  // Timestamps
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deliveredAt   DateTime?
+  readAt        DateTime?
+}
+
+// Voice calls
+model Call {
+  id            String    @id @default(cuid())
+
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  direction     Direction @default(INBOUND)
+  status        CallStatus @default(RINGING)
+
+  duration      Int?      // seconds
+  recordingUrl  String?
+
+  externalId    String?
+  webhookSent   Boolean   @default(false)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  answeredAt    DateTime?
+  endedAt       DateTime?
+}
+
+// Configuration
+model Config {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+enum Channel {
+  WHATSAPP
+  SMS
+  EMAIL
+  VOICE
+}
+
+enum Direction {
+  INBOUND   // User → Nexora
+  OUTBOUND  // Nexora → User
+}
+
+enum ContentType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  LOCATION
+  CONTACT
+}
+
+enum Status {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum CallStatus {
+  RINGING
+  ANSWERED
+  BUSY
+  NO_ANSWER
+  COMPLETED
+  FAILED
+}

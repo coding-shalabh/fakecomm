@@ -1,0 +1,25 @@
+# Render Blueprint for FakeComm
+# Deploy with: render blueprint apply
+
+services:
+  - type: web
+    name: fakecomm
+    runtime: node
+    buildCommand: npm install && npx prisma generate && npx prisma db push
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fakecomm-db
+          property: connectionString
+      - key: NEXORA_WEBHOOK_URL
+        value: https://api.nexoraos.pro/api/v1
+      - key: NEXORA_PHONE
+        value: "+919999999999"  # Update with your Nexora WhatsApp number
+      - key: NEXORA_EMAIL
+        value: support@nexoraos.pro
+
+databases:
+  - name: fakecomm-db
+    databaseName: fakecomm
+    plan: free
